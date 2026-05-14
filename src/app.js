@@ -1,6 +1,7 @@
 import './style.css'
 import { STAGES } from './data/stages.js'
 import { ITEMS } from './data/items.js'
+import { supabase, dbFetchProjects, dbUpsertProject, dbDeleteProject, dbFetchStatuses, dbSetStatus, dbUpsertStatuses } from './supabase.js'
 
 // ═══ PROJECTS ═══
 const PROJECT_COLORS = ['#6366F1','#3B82F6','#10B981','#F97316','#EC4899','#8B5CF6','#F59E0B','#14B8A6']
@@ -36,6 +37,7 @@ let statuses = loadProjectStatuses(currentProjectId)
 let currentStage = null
 let currentDetailKey = null
 let currentView = 'home'
+let userId = null
 
 function saveStatuses() {
   const obj = {}
@@ -109,6 +111,7 @@ function createProject(name) {
   const id = 'proj-' + Date.now()
   projects.push({ id, name, color })
   saveProjects(projects)
+  if (userId) dbUpsertProject(userId, { id, name, color }).catch(console.error)
   switchProject(id)
 }
 
@@ -123,6 +126,18 @@ function switchProject(id) {
   closeDetail()
   updateSidebarProgress()
   showHome()
+  if (userId) {
+    dbFetchStatuses(userId, id).then(remote => {
+      if (currentProjectId !== id) return
+      statuses = remote
+      saveStatuses()
+      updateSidebarProgress()
+      if (currentView === 'stage' && currentStage) renderIssueList(currentStage)
+      else if (currentView === 'home') renderOverview()
+      else if (currentView === 'all') _refreshAllRows()
+      else if (currentView === 'done') showDone()
+    }).catch(console.error)
+  }
 }
 
 function deleteProject(id) {
@@ -131,6 +146,7 @@ function deleteProject(id) {
   if (!confirm(`Delete "${projects.find(p=>p.id===id)?.name}"? Progress will be lost.`)) return
   saveProjects(projects.filter(p => p.id !== id))
   localStorage.removeItem(`wf-status-${id}`)
+  if (userId) dbDeleteProject(userId, id).catch(console.error)
   if (currentProjectId === id) switchProject(getProjects()[0].id)
   else renderProjectMenu()
 }
@@ -280,6 +296,7 @@ function _setStatus(key, next) {
   if (next === 'todo') statuses.delete(key)
   else statuses.set(key, next)
   saveStatuses()
+  if (userId) dbSetStatus(userId, currentProjectId, key, next).catch(console.error)
   updateSidebarProgress()
 
   const sel = currentDetailKey
@@ -543,22 +560,82 @@ document.getElementById('main').addEventListener('click', e => {
   if (!e.target.closest('.issue-row') && !e.target.closest('#detail-panel')) closeDetail()
 })
 
+// ═══ AUTH ═══
+async function sendMagicLink() {
+  const emailEl = document.getElementById('auth-email')
+  const email = emailEl.value.trim()
+  if (!email) { emailEl.focus(); return }
+  const btn = document.getElementById('auth-submit-btn')
+  btn.disabled = true
+  btn.textContent = 'Sending…'
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: location.origin + location.pathname }
+  })
+  if (error) {
+    btn.disabled = false
+    btn.textContent = 'Send login link'
+    console.error(error)
+    return
+  }
+  document.getElementById('auth-sent-email').textContent = email
+  document.getElementById('auth-form-wrap').style.display = 'none'
+  document.getElementById('auth-sent-wrap').style.display = 'flex'
+}
+
+async function signOut() {
+  await supabase.auth.signOut()
+  userId = null
+  document.getElementById('sb-user').style.display = 'none'
+  document.getElementById('auth-form-wrap').style.display = 'flex'
+  document.getElementById('auth-sent-wrap').style.display = 'none'
+  const btn = document.getElementById('auth-submit-btn')
+  btn.disabled = false
+  btn.textContent = 'Send login link'
+  document.getElementById('auth-email').value = ''
+  document.getElementById('auth-overlay').style.display = 'flex'
+}
+
+async function _onSignIn(user) {
+  userId = user.id
+  document.getElementById('auth-overlay').style.display = 'none'
+  document.getElementById('sb-user-email').textContent = user.email
+  document.getElementById('sb-user').style.display = 'flex'
+
+  const remoteProjects = await dbFetchProjects(userId)
+  if (remoteProjects.length === 0) {
+    // First login — push existing local data to Supabase
+    const localProjects = getProjects()
+    await Promise.all(localProjects.map(p => dbUpsertProject(userId, p)))
+    for (const p of localProjects) {
+      const s = loadProjectStatuses(p.id)
+      if (s.size) await dbUpsertStatuses(userId, p.id, s)
+    }
+  } else {
+    saveProjects(remoteProjects)
+    if (!remoteProjects.find(p => p.id === currentProjectId)) {
+      currentProjectId = remoteProjects[0].id
+      localStorage.setItem('wf-current-project', currentProjectId)
+    }
+  }
+
+  statuses = await dbFetchStatuses(userId, currentProjectId)
+  saveStatuses()
+
+  const proj = getProjects().find(p => p.id === currentProjectId) || getProjects()[0]
+  currentProjectId = proj.id
+  _applyProjectHeader(proj)
+  updateSidebarProgress()
+  showHome()
+}
+
 // ═══ INIT ═══
 if (localStorage.getItem('wf-theme') === 'light') document.body.classList.add('light')
 
-// Apply saved project header
-const _initProj = getProjects().find(p => p.id === currentProjectId) || getProjects()[0]
-currentProjectId = _initProj.id
-_applyProjectHeader(_initProj)
-
-// Close project menu on outside click
 // Use composedPath() so detached nodes (after innerHTML swap) are still checked correctly
 document.addEventListener('click', e => {
   if (_menuOpen && !e.composedPath().some(el => el === document.getElementById('sidebar'))) closeProjectMenu()
 })
-
-updateSidebarProgress()
-showHome()
 
 // Expose to window for inline onclick handlers in HTML
 Object.assign(window, {
@@ -570,4 +647,19 @@ Object.assign(window, {
   toggleTheme, markStageDone, filterToggle, groupToggle,
   toggleProjectMenu, closeProjectMenu, switchProject,
   showNewProjectInput, handleProjectKey, createProject, deleteProject,
+  sendMagicLink, signOut,
 })
+
+;(async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) document.getElementById('auth-overlay').style.display = 'flex'
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !userId) {
+      await _onSignIn(session.user)
+    } else if (event === 'SIGNED_OUT') {
+      userId = null
+      document.getElementById('sb-user').style.display = 'none'
+      document.getElementById('auth-overlay').style.display = 'flex'
+    }
+  })
+})()

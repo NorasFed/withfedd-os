@@ -551,8 +551,9 @@ currentProjectId = _initProj.id
 _applyProjectHeader(_initProj)
 
 // Close project menu on outside click
+// Use composedPath() so detached nodes (after innerHTML swap) are still checked correctly
 document.addEventListener('click', e => {
-  if (_menuOpen && !e.target.closest('.sb-top')) closeProjectMenu()
+  if (_menuOpen && !e.composedPath().some(el => el === document.getElementById('sidebar'))) closeProjectMenu()
 })
 
 updateSidebarProgress()

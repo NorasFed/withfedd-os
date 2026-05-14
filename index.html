@@ -11,11 +11,12 @@
   <!-- ══ SIDEBAR ══ -->
   <aside id="sidebar">
     <div class="sb-top">
-      <div class="ws-row">
-        <div class="ws-mark">W</div>
-        <span class="ws-name">Withfedd</span>
+      <div class="ws-row" onclick="toggleProjectMenu()">
+        <div class="ws-mark" id="ws-mark">W</div>
+        <span class="ws-name" id="ws-name">Withfedd</span>
         <span class="ws-chevron">⌄</span>
       </div>
+      <div class="project-menu" id="project-menu" style="display:none"></div>
     </div>
 
     <div class="sb-search" onclick="openCmd()">

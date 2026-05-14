@@ -58,7 +58,58 @@ body {
 .sb-top {
   padding: 10px 10px 8px;
   border-bottom: 1px solid var(--border);
+  position: relative;
 }
+
+/* ══ PROJECT SWITCHER ══ */
+.project-menu {
+  position: absolute;
+  top: calc(100% + 4px); left: 8px; right: 8px;
+  background: var(--surf);
+  border: 1px solid var(--border-v);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
+  z-index: 500;
+  overflow: hidden;
+  animation: pm-in .1s ease;
+}
+@keyframes pm-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+.pm-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; cursor: pointer; font-size: 13px;
+  color: var(--text2); transition: background .08s;
+}
+.pm-item:hover { background: var(--hover); color: var(--text); }
+.pm-item.is-active { color: var(--text); }
+.pm-mark {
+  width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: white;
+}
+.pm-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-check { color: var(--acc); font-size: 11px; flex-shrink: 0; }
+.pm-delete {
+  opacity: 0; font-size: 11px; color: var(--text3);
+  padding: 2px 5px; border-radius: 3px; flex-shrink: 0;
+  transition: opacity .1s, background .1s, color .1s;
+}
+.pm-item:hover .pm-delete { opacity: 1; }
+.pm-item:hover .pm-delete:hover { background: rgba(239,68,68,.15); color: #EF4444; }
+.pm-sep { height: 1px; background: var(--border); margin: 3px 0; }
+.pm-new { color: var(--acc) !important; }
+.pm-new-row {
+  padding: 8px 10px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.pm-new-row input {
+  flex: 1; background: var(--hover); border: 1px solid var(--border-v);
+  border-radius: 4px; padding: 5px 8px; font-size: 12px;
+  color: var(--text); outline: none; font-family: var(--font);
+  transition: border-color .15s;
+}
+.pm-new-row input:focus { border-color: var(--acc); }
+.pm-new-row input::placeholder { color: var(--text3); }
 
 .ws-row {
   display: flex;

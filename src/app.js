@@ -2,12 +2,37 @@ import './style.css'
 import { STAGES } from './data/stages.js'
 import { ITEMS } from './data/items.js'
 
-// ═══ STATE ═══
-const _raw = JSON.parse(localStorage.getItem('wf-status') || '{}')
-const _legacy = JSON.parse(localStorage.getItem('wf-checked') || '[]')
-_legacy.forEach(k => { if (!_raw[k]) _raw[k] = 'done' })
-const statuses = new Map(Object.entries(_raw))
+// ═══ PROJECTS ═══
+const PROJECT_COLORS = ['#6366F1','#3B82F6','#10B981','#F97316','#EC4899','#8B5CF6','#F59E0B','#14B8A6']
+const DEFAULT_PROJECT = { id: 'default', name: 'Withfedd', color: '#6366F1' }
 
+function getProjects() {
+  return JSON.parse(localStorage.getItem('wf-projects') || 'null') || [DEFAULT_PROJECT]
+}
+function saveProjects(p) { localStorage.setItem('wf-projects', JSON.stringify(p)) }
+
+let currentProjectId = localStorage.getItem('wf-current-project') || 'default'
+
+// Migrate legacy wf-status / wf-checked into the default project slot
+;(function migrate() {
+  if (localStorage.getItem('wf-status-default')) return
+  const legacy = localStorage.getItem('wf-status')
+  if (legacy) localStorage.setItem('wf-status-default', legacy)
+})()
+
+function loadProjectStatuses(projectId) {
+  const raw = JSON.parse(localStorage.getItem(`wf-status-${projectId}`) || '{}')
+  // migrate old binary wf-checked for default project
+  if (projectId === 'default') {
+    const old = JSON.parse(localStorage.getItem('wf-checked') || '[]')
+    old.forEach(k => { if (!raw[k]) raw[k] = 'done' })
+  }
+  return new Map(Object.entries(raw))
+}
+
+let statuses = loadProjectStatuses(currentProjectId)
+
+// ═══ STATE ═══
 let currentStage = null
 let currentDetailKey = null
 let currentView = 'home'
@@ -15,7 +40,106 @@ let currentView = 'home'
 function saveStatuses() {
   const obj = {}
   statuses.forEach((v, k) => { obj[k] = v })
-  localStorage.setItem('wf-status', JSON.stringify(obj))
+  localStorage.setItem(`wf-status-${currentProjectId}`, JSON.stringify(obj))
+}
+
+// ═══ PROJECT SWITCHER ═══
+let _menuOpen = false
+
+function toggleProjectMenu() {
+  _menuOpen ? closeProjectMenu() : openProjectMenu()
+}
+
+function openProjectMenu() {
+  _menuOpen = true
+  renderProjectMenu()
+  document.getElementById('project-menu').style.display = 'block'
+}
+
+function closeProjectMenu() {
+  _menuOpen = false
+  document.getElementById('project-menu').style.display = 'none'
+}
+
+function renderProjectMenu() {
+  const projects = getProjects()
+  const menu = document.getElementById('project-menu')
+  menu.innerHTML = projects.map(p => `
+    <div class="pm-item ${p.id === currentProjectId ? 'is-active' : ''}" onclick="switchProject('${p.id}')">
+      <div class="pm-mark" style="background:${p.color}">${p.name[0].toUpperCase()}</div>
+      <span class="pm-label">${p.name}</span>
+      ${p.id === currentProjectId
+        ? '<span class="pm-check">✓</span>'
+        : projects.length > 1
+          ? `<span class="pm-delete" onclick="event.stopPropagation();deleteProject('${p.id}')">✕</span>`
+          : ''}
+    </div>`).join('') + `
+  <div class="pm-sep"></div>
+  <div class="pm-item pm-new" onclick="showNewProjectInput()">
+    <span style="width:20px;text-align:center;font-size:15px">+</span>
+    <span class="pm-label">New project</span>
+  </div>`
+}
+
+function showNewProjectInput() {
+  const menu = document.getElementById('project-menu')
+  menu.innerHTML = `
+    <div class="pm-new-row">
+      <input id="pm-input" placeholder="Project name…" onkeydown="handleProjectKey(event)" />
+    </div>
+    <div class="pm-item" onclick="closeProjectMenu()" style="font-size:12px">
+      <span style="width:20px;text-align:center">↩</span>
+      <span class="pm-label" style="color:var(--text3)">Cancel</span>
+    </div>`
+  setTimeout(() => document.getElementById('pm-input')?.focus(), 30)
+}
+
+function handleProjectKey(e) {
+  if (e.key === 'Enter') {
+    const name = e.target.value.trim()
+    if (name) createProject(name)
+  } else if (e.key === 'Escape') {
+    closeProjectMenu()
+  }
+}
+
+function createProject(name) {
+  const projects = getProjects()
+  const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length]
+  const id = 'proj-' + Date.now()
+  projects.push({ id, name, color })
+  saveProjects(projects)
+  switchProject(id)
+}
+
+function switchProject(id) {
+  saveStatuses()
+  currentProjectId = id
+  localStorage.setItem('wf-current-project', id)
+  statuses = loadProjectStatuses(id)
+  const proj = getProjects().find(p => p.id === id)
+  if (proj) _applyProjectHeader(proj)
+  closeProjectMenu()
+  closeDetail()
+  updateSidebarProgress()
+  showHome()
+}
+
+function deleteProject(id) {
+  const projects = getProjects()
+  if (projects.length <= 1) return
+  if (!confirm(`Delete "${projects.find(p=>p.id===id)?.name}"? Progress will be lost.`)) return
+  saveProjects(projects.filter(p => p.id !== id))
+  localStorage.removeItem(`wf-status-${id}`)
+  if (currentProjectId === id) switchProject(getProjects()[0].id)
+  else renderProjectMenu()
+}
+
+function _applyProjectHeader(proj) {
+  document.getElementById('ws-mark').textContent = proj.name[0].toUpperCase()
+  document.getElementById('ws-mark').style.background = proj.color
+  document.getElementById('ws-name').textContent = proj.name
+  document.title = `${proj.name} — Design Process`
 }
 
 function getStatus(key) { return statuses.get(key) || 'todo' }
@@ -420,6 +544,17 @@ document.getElementById('main').addEventListener('click', e => {
 
 // ═══ INIT ═══
 if (localStorage.getItem('wf-theme') === 'light') document.body.classList.add('light')
+
+// Apply saved project header
+const _initProj = getProjects().find(p => p.id === currentProjectId) || getProjects()[0]
+currentProjectId = _initProj.id
+_applyProjectHeader(_initProj)
+
+// Close project menu on outside click
+document.addEventListener('click', e => {
+  if (_menuOpen && !e.target.closest('.sb-top')) closeProjectMenu()
+})
+
 updateSidebarProgress()
 showHome()
 
@@ -431,4 +566,6 @@ Object.assign(window, {
   advanceFromPanel, undoFromPanel,
   openCmd, closeCmd, filterCmd, cmdKeydown,
   toggleTheme, markStageDone, filterToggle, groupToggle,
+  toggleProjectMenu, closeProjectMenu, switchProject,
+  showNewProjectInput, handleProjectKey, createProject, deleteProject,
 })

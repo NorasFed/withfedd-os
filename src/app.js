@@ -139,6 +139,7 @@ function _applyProjectHeader(proj) {
   document.getElementById('ws-mark').textContent = proj.name[0].toUpperCase()
   document.getElementById('ws-mark').style.background = proj.color
   document.getElementById('ws-name').textContent = proj.name
+  document.getElementById('tb-project').textContent = proj.name
   document.title = `${proj.name} — Design Process`
 }
 

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Withfedd — Design Process</title>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside id="sidebar">
+    <div class="sb-top">
+      <div class="ws-row">
+        <div class="ws-mark">W</div>
+        <span class="ws-name">Withfedd</span>
+        <span class="ws-chevron">⌄</span>
+      </div>
+    </div>
+
+    <div class="sb-search" onclick="openCmd()">
+      <div class="sb-search-inner">
+        <span class="sb-search-icon">⌕</span>
+        <span class="sb-search-placeholder">Search issues…</span>
+        <span class="sb-search-kbd">⌘K</span>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section">Views</div>
+      <div class="sb-item" id="nav-home" onclick="showHome()">
+        <div class="sb-item-icon">⊟</div>
+        <span class="sb-item-label">Overview</span>
+      </div>
+      <div class="sb-item" onclick="showAllIssues()">
+        <div class="sb-item-icon">◈</div>
+        <span class="sb-item-label">All Issues</span>
+        <span class="sb-item-count" id="total-count">0</span>
+      </div>
+      <div class="sb-item" onclick="showDone()">
+        <div class="sb-item-icon">✓</div>
+        <span class="sb-item-label">Completed</span>
+        <span class="sb-item-count" id="done-count">0</span>
+      </div>
+
+      <div class="sb-sep"></div>
+      <div class="sb-section">Design Process</div>
+
+      <div class="sb-item" id="nav-goals"   onclick="showStage('goals')">
+        <div class="sb-item-dot" style="background:#8B5CF6"></div>
+        <span class="sb-item-label">Goals</span>
+        <span class="sb-item-progress" id="sp-goals">—</span>
+      </div>
+      <div class="sb-item" id="nav-scope"   onclick="showStage('scope')">
+        <div class="sb-item-dot" style="background:#3B82F6"></div>
+        <span class="sb-item-label">Scope</span>
+        <span class="sb-item-progress" id="sp-scope">—</span>
+      </div>
+      <div class="sb-item" id="nav-sitemap" onclick="showStage('sitemap')">
+        <div class="sb-item-dot" style="background:#14B8A6"></div>
+        <span class="sb-item-label">Sitemap</span>
+        <span class="sb-item-progress" id="sp-sitemap">—</span>
+      </div>
+      <div class="sb-item" id="nav-content" onclick="showStage('content')">
+        <div class="sb-item-dot" style="background:#F97316"></div>
+        <span class="sb-item-label">Content</span>
+        <span class="sb-item-progress" id="sp-content">—</span>
+      </div>
+      <div class="sb-item" id="nav-visual"  onclick="showStage('visual')">
+        <div class="sb-item-dot" style="background:#EC4899"></div>
+        <span class="sb-item-label">Visual</span>
+        <span class="sb-item-progress" id="sp-visual">—</span>
+      </div>
+      <div class="sb-item" id="nav-testing" onclick="showStage('testing')">
+        <div class="sb-item-dot" style="background:#F59E0B"></div>
+        <span class="sb-item-label">Testing</span>
+        <span class="sb-item-progress" id="sp-testing">—</span>
+      </div>
+      <div class="sb-item" id="nav-launch"  onclick="showStage('launch')">
+        <div class="sb-item-dot" style="background:#10B981"></div>
+        <span class="sb-item-label">Launch</span>
+        <span class="sb-item-progress" id="sp-launch">—</span>
+      </div>
+    </nav>
+
+    <div class="sb-bottom">
+      <div class="sb-bottom-btn" onclick="openCmd()">
+        <span>⌨</span><span>Shortcuts</span>
+      </div>
+      <button class="theme-pill" onclick="toggleTheme()" title="Toggle theme">
+        <div class="tp-knob"></div>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <div id="main">
+    <div id="topbar">
+      <div class="tb-breadcrumb">
+        <span>Withfedd</span>
+        <span class="tb-breadcrumb-sep">›</span>
+        <span class="tb-breadcrumb-cur" id="tb-stage">Overview</span>
+      </div>
+      <div class="tb-right">
+        <button class="tb-btn" onclick="filterToggle()">⚏ Filter</button>
+        <button class="tb-btn" onclick="groupToggle()">⊞ Display</button>
+        <button class="tb-new" onclick="markStageDone()">✓ Mark stage done</button>
+      </div>
+    </div>
+    <div class="stage-progress-bar"><div class="spb-fill" id="spb-fill"></div></div>
+
+    <!-- Stage view -->
+    <div id="stage-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="stage-hero">
+        <div class="sh-eyebrow" id="sh-eyebrow">Stage 01</div>
+        <div class="sh-title" id="sh-title">Goals</div>
+        <div class="sh-desc" id="sh-desc">Define what the website must accomplish.</div>
+        <div class="sh-stats">
+          <div class="sh-stat"><span class="sh-stat-val" id="sh-total">0</span>&nbsp;issues</div>
+          <div class="sh-stat"><span class="sh-stat-val" id="sh-done">0</span>&nbsp;completed</div>
+          <div class="sh-stat"><span class="sh-stat-val" id="sh-pct">0%</span>&nbsp;done</div>
+        </div>
+      </div>
+      <div id="issue-list-area"></div>
+    </div>
+
+    <!-- Overview (home) -->
+    <div id="overview-view" style="display:none;flex:1;overflow:hidden;">
+      <div id="stage-overview"></div>
+    </div>
+  </div>
+
+  <!-- ══ DETAIL PANEL ══ -->
+  <div id="detail-panel">
+    <div class="dp-topbar">
+      <span class="dp-id" id="dp-id">—</span>
+      <span class="dp-stage-badge" id="dp-badge">Goals</span>
+      <button class="dp-topbar-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="dp-body">
+      <div class="dp-title-area">
+        <div class="dp-title" id="dp-title">—</div>
+      </div>
+      <div class="dp-props">
+        <div class="dp-prop">
+          <span class="dp-prop-label">Status</span>
+          <span class="dp-prop-val" id="dp-status-val">
+            <span class="dp-status-dot" id="dp-status-dot" style="background:#46464F"></span>
+            <span id="dp-status-text">Todo</span>
+          </span>
+        </div>
+        <div class="dp-prop">
+          <span class="dp-prop-label">Priority</span>
+          <span class="dp-prop-val" id="dp-priority-val">Medium</span>
+        </div>
+        <div class="dp-prop">
+          <span class="dp-prop-label">Est. Time</span>
+          <span class="dp-prop-val" id="dp-time-val">—</span>
+        </div>
+        <div class="dp-prop">
+          <span class="dp-prop-label">Stage</span>
+          <span class="dp-prop-val" id="dp-stage-val">—</span>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-label">Description</div>
+        <div class="dp-desc" id="dp-desc">—</div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-label">Tools</div>
+        <div class="dp-tools" id="dp-tools"></div>
+      </div>
+      <div class="dp-actions">
+        <button class="dp-advance-btn" id="dp-advance-btn" onclick="advanceFromPanel()">Mark as done</button>
+        <button class="dp-undo-btn" id="dp-undo-btn" onclick="undoFromPanel()" style="display:none">↩ Reset to Todo</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══ CMD PALETTE ══ -->
+<div id="cmd-overlay" onclick="closeCmd()">
+  <div id="cmd-box" onclick="event.stopPropagation()">
+    <div class="cmd-input-row">
+      <span class="cmd-icon">⌕</span>
+      <input class="cmd-input" id="cmd-input" placeholder="Type a command or search..." oninput="filterCmd(this.value)" onkeydown="cmdKeydown(event)" autocomplete="off"/>
+      <span class="cmd-esc">Esc</span>
+    </div>
+    <div class="cmd-results" id="cmd-results"></div>
+    <div class="cmd-footer">
+      <div class="cmd-hint"><span class="cmd-hint-key">↑↓</span> Navigate</div>
+      <div class="cmd-hint"><span class="cmd-hint-key">↵</span> Select</div>
+      <div class="cmd-hint"><span class="cmd-hint-key">Esc</span> Close</div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/src/app.js"></script>
+</body>
+</html>

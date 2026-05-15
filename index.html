@@ -109,8 +109,14 @@
         <span class="tb-breadcrumb-cur" id="tb-stage">Overview</span>
       </div>
       <div class="tb-right">
-        <button class="tb-btn" onclick="filterToggle()">⚏ Filter</button>
-        <button class="tb-btn" onclick="groupToggle()">⊞ Display</button>
+        <div class="tb-dropdown-wrap">
+          <button class="tb-btn" id="tb-filter-btn" onclick="filterToggle()">⚏ Filter</button>
+          <div class="tb-panel" id="filter-panel"></div>
+        </div>
+        <div class="tb-dropdown-wrap">
+          <button class="tb-btn" id="tb-display-btn" onclick="groupToggle()">⊞ Display</button>
+          <div class="tb-panel" id="display-panel"></div>
+        </div>
         <button class="tb-new" onclick="markStageDone()">✓ Mark stage done</button>
       </div>
     </div>

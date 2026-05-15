@@ -39,6 +39,13 @@ let currentDetailKey = null
 let currentView = 'home'
 let userId = null
 
+// ═══ FILTER & DISPLAY STATE ═══
+const _filterPriority = new Set(['urgent','high','medium','low','none'])
+let _hideCompleted = false
+let _groupByStatus = true
+let _filterPanelOpen = false
+let _displayPanelOpen = false
+
 function saveStatuses() {
   const obj = {}
   statuses.forEach((v, k) => { obj[k] = v })
@@ -197,7 +204,8 @@ function rowHTML(k, st) {
 // ═══ RENDER ═══
 function renderIssueList(stageId) {
   const st = STAGES.find(s => s.id === stageId)
-  const keys = Object.keys(ITEMS).filter(k => ITEMS[k].stage === stageId)
+  const allKeys = Object.keys(ITEMS).filter(k => ITEMS[k].stage === stageId)
+  const keys = _applyFilters(allKeys)
   const todo  = keys.filter(k => getStatus(k) === 'todo')
   const doing = keys.filter(k => getStatus(k) === 'doing')
   const done  = keys.filter(k => getStatus(k) === 'done')
@@ -205,25 +213,33 @@ function renderIssueList(stageId) {
   const el = document.getElementById('issue-list-area')
   el.innerHTML = ''
 
-  function renderGroup(title, ks, dotColor) {
-    if (!ks.length) return
+  if (_groupByStatus) {
+    function renderGroup(title, ks, dotColor) {
+      if (!ks.length) return
+      const g = document.createElement('div')
+      g.innerHTML = `
+        <div class="group-header" onclick="toggleGroup(this)">
+          <span class="gh-icon">▾</span>
+          <span class="gh-title" style="color:${dotColor}">${title}</span>
+          <span class="gh-count">${ks.length}</span>
+        </div>
+        <div class="group-body">${ks.map(k => rowHTML(k, st)).join('')}</div>`
+      el.appendChild(g)
+    }
+    renderGroup('Todo',        todo,  'var(--text2)')
+    renderGroup('In Progress', doing, '#F59E0B')
+    renderGroup('Done',        done,  '#10B981')
+  } else {
+    const pOrder = ['urgent','high','medium','low','none']
+    const sorted = [...keys].sort((a,b) => pOrder.indexOf(ITEMS[a].priority||'none') - pOrder.indexOf(ITEMS[b].priority||'none'))
     const g = document.createElement('div')
-    g.innerHTML = `
-      <div class="group-header" onclick="toggleGroup(this)">
-        <span class="gh-icon">▾</span>
-        <span class="gh-title" style="color:${dotColor}">${title}</span>
-        <span class="gh-count">${ks.length}</span>
-      </div>
-      <div class="group-body">${ks.map(k => rowHTML(k, st)).join('')}</div>`
+    g.innerHTML = `<div class="group-body">${sorted.map(k => rowHTML(k, st)).join('')}</div>`
     el.appendChild(g)
   }
 
-  renderGroup('Todo',        todo,  'var(--text2)')
-  renderGroup('In Progress', doing, '#F59E0B')
-  renderGroup('Done',        done,  '#10B981')
-
   if (!keys.length) {
-    el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--text3);gap:8px;"><div style="font-size:28px">${st.icon}</div><div style="font-size:13px;font-weight:600;color:var(--text2)">No issues found</div></div>`
+    const msg = allKeys.length ? 'No issues match the current filter' : 'No issues found'
+    el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--text3);gap:8px;"><div style="font-size:28px">${st.icon}</div><div style="font-size:13px;font-weight:600;color:var(--text2)">${msg}</div></div>`
   }
 
   const total = keys.length, ndone = done.length, ndoing = doing.length
@@ -323,7 +339,8 @@ function _refreshAllRows() {
   document.getElementById('spb-fill').style.width = (ndone / total * 100) + '%'
   el.innerHTML = ''
   STAGES.forEach(st => {
-    const keys = Object.keys(ITEMS).filter(k => ITEMS[k].stage === st.id)
+    const allKeys = Object.keys(ITEMS).filter(k => ITEMS[k].stage === st.id)
+    const keys = _applyFilters(allKeys)
     if (!keys.length) return
     const g = document.createElement('div')
     g.innerHTML = `<div class="group-header" onclick="toggleGroup(this)"><span class="gh-icon">▾</span><div style="width:8px;height:8px;border-radius:50%;background:${st.color};flex-shrink:0"></div><span class="gh-title">${st.name}</span><span class="gh-count">${keys.length}</span></div><div class="group-body">${keys.map(k => rowHTML(k, st)).join('')}</div>`
@@ -542,9 +559,112 @@ function cmdKeydown(e) {
   items.forEach((el, i) => el.classList.toggle('is-selected', i === cmdIdx))
 }
 
-// ═══ TOPBAR ACTIONS ═══
-function filterToggle() { /* future: filter panel */ }
-function groupToggle()  { /* future: display options */ }
+// ═══ FILTER & DISPLAY ═══
+function _applyFilters(keys) {
+  return keys
+    .filter(k => _filterPriority.has(ITEMS[k].priority || 'none'))
+    .filter(k => !(_hideCompleted && getStatus(k) === 'done'))
+}
+
+function _applyView() {
+  if (currentView === 'stage' && currentStage) renderIssueList(currentStage)
+  else if (currentView === 'all') showAllIssues()
+  else if (currentView === 'done') showDone()
+}
+
+function _syncPanelButtons() {
+  const filterActive = _filterPriority.size < 5
+  const displayActive = _hideCompleted || !_groupByStatus
+  document.getElementById('tb-filter-btn')?.classList.toggle('is-active', _filterPanelOpen || filterActive)
+  document.getElementById('tb-display-btn')?.classList.toggle('is-active', _displayPanelOpen || displayActive)
+}
+
+function filterToggle() {
+  _filterPanelOpen = !_filterPanelOpen
+  _displayPanelOpen = false
+  document.getElementById('display-panel').style.display = 'none'
+  const fp = document.getElementById('filter-panel')
+  fp.style.display = _filterPanelOpen ? 'block' : 'none'
+  if (_filterPanelOpen) _renderFilterPanel()
+  _syncPanelButtons()
+}
+
+function groupToggle() {
+  _displayPanelOpen = !_displayPanelOpen
+  _filterPanelOpen = false
+  document.getElementById('filter-panel').style.display = 'none'
+  const dp = document.getElementById('display-panel')
+  dp.style.display = _displayPanelOpen ? 'block' : 'none'
+  if (_displayPanelOpen) _renderDisplayPanel()
+  _syncPanelButtons()
+}
+
+function _renderFilterPanel() {
+  const opts = [
+    { val:'urgent', label:'🔴 Urgent' },
+    { val:'high',   label:'High' },
+    { val:'medium', label:'Medium' },
+    { val:'low',    label:'Low' },
+    { val:'none',   label:'None' },
+  ]
+  const allOn = _filterPriority.size === 5
+  document.getElementById('filter-panel').innerHTML = `
+    <div class="fp-header">
+      <span class="fp-section-label">Priority</span>
+      <span class="fp-clear" onclick="clearPriorityFilter()">${allOn ? '' : 'Reset'}</span>
+    </div>
+    ${opts.map(o => `
+      <div class="fp-opt ${_filterPriority.has(o.val) ? 'is-on' : ''}" onclick="togglePriorityFilter('${o.val}')">
+        <div class="fp-check">${_filterPriority.has(o.val) ? '✓' : ''}</div>
+        <span>${o.label}</span>
+      </div>`).join('')}`
+}
+
+function _renderDisplayPanel() {
+  document.getElementById('display-panel').innerHTML = `
+    <div class="fp-toggle ${_hideCompleted ? 'is-on' : ''}" onclick="toggleHideCompleted()">
+      <span>Hide completed</span>
+      <div class="fp-toggle-pill"><div class="fp-toggle-knob"></div></div>
+    </div>
+    <div class="fp-sep"></div>
+    <div class="fp-toggle ${!_groupByStatus ? 'is-on' : ''}" onclick="toggleGroupByStatus()">
+      <span>Flat list</span>
+      <div class="fp-toggle-pill"><div class="fp-toggle-knob"></div></div>
+    </div>`
+}
+
+function togglePriorityFilter(val) {
+  if (_filterPriority.has(val)) {
+    if (_filterPriority.size === 1) return
+    _filterPriority.delete(val)
+  } else {
+    _filterPriority.add(val)
+  }
+  _renderFilterPanel()
+  _syncPanelButtons()
+  _applyView()
+}
+
+function clearPriorityFilter() {
+  ;['urgent','high','medium','low','none'].forEach(v => _filterPriority.add(v))
+  _renderFilterPanel()
+  _syncPanelButtons()
+  _applyView()
+}
+
+function toggleHideCompleted() {
+  _hideCompleted = !_hideCompleted
+  _renderDisplayPanel()
+  _syncPanelButtons()
+  _applyView()
+}
+
+function toggleGroupByStatus() {
+  _groupByStatus = !_groupByStatus
+  _renderDisplayPanel()
+  _syncPanelButtons()
+  _applyView()
+}
 
 // ═══ KEYBOARD SHORTCUTS ═══
 document.addEventListener('keydown', e => {
@@ -635,6 +755,16 @@ if (localStorage.getItem('wf-theme') === 'light') document.body.classList.add('l
 // Use composedPath() so detached nodes (after innerHTML swap) are still checked correctly
 document.addEventListener('click', e => {
   if (_menuOpen && !e.composedPath().some(el => el === document.getElementById('sidebar'))) closeProjectMenu()
+  if (_filterPanelOpen && !e.target.closest('.tb-dropdown-wrap')) {
+    _filterPanelOpen = false
+    document.getElementById('filter-panel').style.display = 'none'
+    _syncPanelButtons()
+  }
+  if (_displayPanelOpen && !e.target.closest('.tb-dropdown-wrap')) {
+    _displayPanelOpen = false
+    document.getElementById('display-panel').style.display = 'none'
+    _syncPanelButtons()
+  }
 })
 
 // Expose to window for inline onclick handlers in HTML
@@ -648,6 +778,7 @@ Object.assign(window, {
   toggleProjectMenu, closeProjectMenu, switchProject,
   showNewProjectInput, handleProjectKey, createProject, deleteProject,
   sendMagicLink, signOut,
+  togglePriorityFilter, clearPriorityFilter, toggleHideCompleted, toggleGroupByStatus,
 })
 
 ;(async () => {

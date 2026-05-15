@@ -556,6 +556,51 @@ body.light .tp-knob::after { content: '☀️'; }
 .cmd-hint { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 5px; }
 .cmd-hint-key { background: var(--hover); border: 1px solid var(--border-v); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 10px; }
 
+/* ══ FILTER & DISPLAY PANELS ══ */
+.tb-dropdown-wrap { position: relative; }
+.tb-panel {
+  display: none;
+  position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--surf); border: 1px solid var(--border-v);
+  border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,.35);
+  z-index: 300; min-width: 190px; padding: 5px;
+  animation: pm-in .1s ease;
+}
+.fp-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 2px; }
+.fp-section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--text3); }
+.fp-clear { font-size: 11px; color: var(--acc); cursor: pointer; }
+.fp-sep { height: 1px; background: var(--border); margin: 4px 0; }
+.fp-opt {
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 8px; border-radius: 5px; cursor: pointer;
+  font-size: 12.5px; color: var(--text2); transition: background .08s;
+}
+.fp-opt:hover { background: var(--hover); }
+.fp-check {
+  width: 14px; height: 14px; border: 1.5px solid var(--border-v); border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; flex-shrink: 0; color: white;
+}
+.fp-opt.is-on .fp-check { background: var(--acc); border-color: var(--acc); }
+.fp-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; border-radius: 5px; cursor: pointer;
+  font-size: 12.5px; color: var(--text2); transition: background .08s; gap: 16px;
+}
+.fp-toggle:hover { background: var(--hover); }
+.fp-toggle-pill {
+  width: 30px; height: 17px; border-radius: 9px; flex-shrink: 0;
+  background: var(--border-v); position: relative; transition: background .15s;
+}
+.fp-toggle-knob {
+  position: absolute; width: 13px; height: 13px; border-radius: 50%;
+  background: white; top: 2px; left: 2px; transition: transform .15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+.fp-toggle.is-on .fp-toggle-pill { background: var(--acc); }
+.fp-toggle.is-on .fp-toggle-knob { transform: translateX(13px); }
+.tb-btn.is-active { background: var(--hoverB); color: var(--text); }
+
 /* ══ AUTH OVERLAY ══ */
 #auth-overlay {
   position: fixed; inset: 0;

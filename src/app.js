@@ -651,6 +651,16 @@ Object.assign(window, {
 })
 
 ;(async () => {
+  // Dev bypass: skip auth on localhost so the preview works without a magic link
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    const proj = getProjects().find(p => p.id === currentProjectId) || getProjects()[0]
+    currentProjectId = proj.id
+    _applyProjectHeader(proj)
+    updateSidebarProgress()
+    showHome()
+    return
+  }
+
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) document.getElementById('auth-overlay').style.display = 'flex'
   supabase.auth.onAuthStateChange(async (event, session) => {

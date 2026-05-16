@@ -354,13 +354,19 @@ function setActiveNav(id) {
   if (id) document.getElementById(id)?.classList.add('is-active')
 }
 
+function _hideAllViews() {
+  document.getElementById('stage-view').style.display = 'none'
+  document.getElementById('overview-view').style.display = 'none'
+  document.getElementById('clients-view').style.display = 'none'
+}
+
 function showStage(stageId) {
   currentStage = stageId
   currentView = 'stage'
   const st = STAGES.find(s => s.id === stageId)
   setActiveNav('nav-' + stageId)
+  _hideAllViews()
   document.getElementById('stage-view').style.display = 'flex'
-  document.getElementById('overview-view').style.display = 'none'
   document.getElementById('tb-stage').textContent = st.name
   renderIssueList(stageId)
   updateSidebarProgress()
@@ -370,7 +376,7 @@ function showHome() {
   currentView = 'home'
   currentStage = null
   setActiveNav('nav-home')
-  document.getElementById('stage-view').style.display = 'none'
+  _hideAllViews()
   document.getElementById('overview-view').style.display = 'flex'
   document.getElementById('tb-stage').textContent = 'Overview'
   document.getElementById('spb-fill').style.width = '0'
@@ -381,8 +387,8 @@ function showAllIssues() {
   currentView = 'all'
   currentStage = 'all'
   setActiveNav(null)
+  _hideAllViews()
   document.getElementById('stage-view').style.display = 'flex'
-  document.getElementById('overview-view').style.display = 'none'
   document.getElementById('tb-stage').textContent = 'All Issues'
   document.getElementById('sh-eyebrow').textContent = 'All Stages'
   document.getElementById('sh-eyebrow').style.color = 'var(--acc)'
@@ -396,8 +402,8 @@ function showAllIssues() {
 function showDone() {
   currentView = 'done'
   setActiveNav(null)
+  _hideAllViews()
   document.getElementById('stage-view').style.display = 'flex'
-  document.getElementById('overview-view').style.display = 'none'
   document.getElementById('tb-stage').textContent = 'Completed'
   document.getElementById('sh-eyebrow').textContent = 'Completed'
   document.getElementById('sh-eyebrow').style.color = '#10B981'

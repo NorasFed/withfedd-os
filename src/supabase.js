@@ -55,3 +55,20 @@ export async function dbUpsertStatuses(userId, projectId, statusesMap) {
   const { error } = await supabase.from('statuses').upsert(rows)
   if (error) console.error('upsertStatuses', error)
 }
+
+export async function dbSaveResponse(data) {
+  const { error } = await supabase
+    .from('questionnaire_responses')
+    .insert({ data, submitted_at: new Date().toISOString() })
+  if (error) console.error('saveResponse', error)
+  return !error
+}
+
+export async function dbFetchResponses() {
+  const { data, error } = await supabase
+    .from('questionnaire_responses')
+    .select('id, submitted_at, data')
+    .order('submitted_at', { ascending: false })
+  if (error) console.error('fetchResponses', error)
+  return data || []
+}

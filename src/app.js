@@ -1,7 +1,7 @@
 import './style.css'
 import { STAGES } from './data/stages.js'
 import { ITEMS } from './data/items.js'
-import { supabase, dbFetchProjects, dbUpsertProject, dbDeleteProject, dbFetchStatuses, dbSetStatus, dbUpsertStatuses } from './supabase.js'
+import { supabase, dbFetchProjects, dbUpsertProject, dbDeleteProject, dbFetchStatuses, dbSetStatus, dbUpsertStatuses, dbFetchResponses } from './supabase.js'
 
 // ═══ PROJECTS ═══
 const PROJECT_COLORS = ['#6366F1','#3B82F6','#10B981','#F97316','#EC4899','#8B5CF6','#F59E0B','#14B8A6']
@@ -666,6 +666,172 @@ function toggleGroupByStatus() {
   _applyView()
 }
 
+// ═══ CLIENTS ═══
+const CALL_STEPS = [
+  { num:'01', title:'Accueil & mise en confiance', duration:'5 min', desc:'Créer un espace chaleureux dès le départ. L\'objectif n\'est pas de vendre, mais d\'écouter.', questions:[] },
+  { num:'02', title:'Qui êtes-vous & votre univers', duration:'10 min', desc:'Comprendre l\'identité, le positionnement et la personnalité avant même de parler de site.', questions:['Comment vous présenteriez-vous en quelques mots ?', 'Depuis combien de temps exercez-vous ?', 'Qu\'est-ce qui vous a poussé à vous lancer ?', 'Comment vous décririez-vous en trois mots ?'] },
+  { num:'03', title:'Votre public & vos clients idéaux', duration:'10 min', desc:'Le site doit parler à une personne précise. Plus on la connaît, plus le message sera juste.', questions:['Qui sont vos clients idéaux ?', 'Quel problème venez-vous résoudre dans leur vie ?', 'Quelle action principale souhaitez-vous qu\'ils fassent sur votre site ?'] },
+  { num:'04', title:'Vos offres & services à présenter', duration:'10 min', desc:'Cartographier exactement ce qui doit figurer sur le site, pour ne rien oublier et bien hiérarchiser.', questions:['Quels sont vos services ou produits ?', 'Y a-t-il une offre phare à mettre en avant en priorité ?', 'Avez-vous un livre, un programme, des conférences, des ateliers ?', 'Souhaitez-vous vendre directement sur le site ou juste présenter ?'] },
+  { num:'05', title:'Univers visuel & inspirations', duration:'10 min', desc:'Cerner les préférences esthétiques du client pour orienter la direction créative.', questions:['Avez-vous des sites qui vous inspirent ?', 'Quelles couleurs vous représentent ?', 'Comment vous imaginez-vous sur votre site : photos, vidéo ?', 'Plutôt sobre et épuré, ou riche et expressif ?'] },
+  { num:'06', title:'Fonctionnalités & besoins techniques', duration:'8 min', desc:'Cadrer le périmètre technique sans entrer dans les détails — juste identifier les besoins clés.', questions:['Avez-vous déjà un site ? Un nom de domaine ?', 'Fonctionnalités souhaitées : formulaire, prise de RDV, newsletter, blog, boutique ?', 'Souhaitez-vous pouvoir mettre à jour le site vous-même ?', 'Le site doit-il être disponible en plusieurs langues ?'] },
+  { num:'07', title:'Budget & calendrier', duration:'7 min', desc:'Aligner les attentes avec les réalités — sans tabou, avec respect et transparence.', questions:['Avez-vous une enveloppe budgétaire en tête ?', 'Y a-t-il une date de lancement souhaitée ?'] },
+  { num:'08', title:'Questions & prochaines étapes', duration:'10 min', desc:'Clore l\'appel en laissant la parole au client, puis poser des bases claires pour la suite.', questions:['Avez-vous des questions pour moi ?', 'Quelles sont vos attentes pour la collaboration ?', 'Comment vous sentez-vous par rapport au projet ?'] },
+]
+
+const Q_SECTIONS = [
+  { num:'01', label:'Votre identité' },
+  { num:'02', label:'Votre public' },
+  { num:'03', label:'Vos offres & services' },
+  { num:'04', label:'Univers visuel' },
+  { num:'05', label:'Technique' },
+  { num:'06', label:'Calendrier' },
+]
+
+function _showClientsView(navId, breadcrumb) {
+  currentView = 'clients'
+  currentStage = null
+  setActiveNav(navId)
+  document.getElementById('stage-view').style.display = 'none'
+  document.getElementById('overview-view').style.display = 'none'
+  document.getElementById('clients-view').style.display = 'flex'
+  document.getElementById('clients-view').style.flexDirection = 'column'
+  document.getElementById('tb-stage').textContent = breadcrumb
+  document.getElementById('spb-fill').style.width = '0'
+}
+
+function showQuestionnaire() {
+  _showClientsView('nav-questionnaire', 'Questionnaire')
+  const url = `${location.origin}/withfedd-os/questionnaire.html`
+  const el = document.getElementById('clients-view')
+  el.innerHTML = `
+    <div class="cv-header">
+      <div class="cv-title">Questionnaire client</div>
+      <div class="cv-sub">Partagez ce lien avec vos clients avant le premier appel.</div>
+    </div>
+    <div class="qlink-box">
+      <span class="qlink-url">${url}</span>
+      <button class="cv-btn primary" onclick="
+        navigator.clipboard.writeText('${url}').then(() => {
+          this.textContent = 'Copié !'
+          setTimeout(() => this.textContent = 'Copier le lien', 1800)
+        })
+      ">Copier le lien</button>
+    </div>
+    <div class="cv-header" style="margin-bottom:14px;">
+      <div class="cv-sub" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);">Sections du questionnaire</div>
+    </div>
+    <div class="q-sections-preview">
+      ${Q_SECTIONS.map(s => `
+        <div class="q-section-row">
+          <span class="q-section-num">${s.num}</span>
+          <span>${s.label}</span>
+        </div>`).join('')}
+    </div>
+  `
+  // Update response count badge
+  dbFetchResponses().then(rows => {
+    const countEl = document.getElementById('responses-count')
+    if (countEl) countEl.textContent = rows.length || ''
+  }).catch(console.error)
+}
+
+function showResponses() {
+  _showClientsView('nav-responses', 'Réponses')
+  const el = document.getElementById('clients-view')
+  el.innerHTML = `
+    <div class="cv-header">
+      <div class="cv-title">Réponses clients</div>
+      <div class="cv-sub">Toutes les soumissions du questionnaire.</div>
+    </div>
+    <div id="resp-list-container">
+      <div style="color:var(--text3);font-size:13px;padding:20px 0;">Chargement…</div>
+    </div>
+  `
+  dbFetchResponses().then(rows => {
+    const countEl = document.getElementById('responses-count')
+    if (countEl) countEl.textContent = rows.length || ''
+
+    const container = document.getElementById('resp-list-container')
+    if (!container) return
+    if (!rows.length) {
+      container.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:40px 0;text-align:center;">Aucune réponse pour l'instant.<br><span style="font-size:12px;">Les soumissions du questionnaire apparaîtront ici.</span></div>`
+      return
+    }
+    container.innerHTML = `<div class="resp-list">${rows.map((r, i) => {
+      const d = r.data || {}
+      const name = d.nom || d.email || 'Client anonyme'
+      const date = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) : '—'
+      const fields = Object.entries(d).filter(([k]) => k !== 'nom')
+      const fieldLabels = {
+        titre:'Titre', presentation:'Présentation', anciennete:'Ancienneté', expertise:'Expertise',
+        trois_mots:'3 mots', client_ideal:'Client idéal', probleme:'Problème résolu', action:'Action souhaitée',
+        action_autre:'Action (autre)', services:'Services', offre_phare:'Offre phare',
+        contenu_extra:'Contenu extra', contenu_extra_detail:'Détail contenu', reference_site:'Site référence',
+        inspirations:'Inspirations', couleurs:'Couleurs', ambiance:'Ambiance', ambiance_autre:'Ambiance (autre)',
+        photos:'Photos', site_actuel:'Site actuel', domaine:'Nom de domaine',
+        fonctionnalites:'Fonctionnalités', fonctionnalites_autre:'Fonctionnalités (autre)',
+        autonomie:'Autonomie', lancement:'Lancement', evenement:'Événement',
+        email:'Email', message_libre:'Message libre',
+      }
+      return `
+        <div class="resp-card" id="resp-${i}" onclick="toggleRespCard(${i})">
+          <div class="resp-card-header">
+            <span class="resp-name">${name}</span>
+            <span class="resp-date">${date}</span>
+            <span class="resp-chevron">›</span>
+          </div>
+          <div class="resp-body">
+            ${fields.map(([k, v]) => {
+              const label = fieldLabels[k] || k
+              const val = Array.isArray(v) ? v.join(', ') : v
+              return val ? `<div class="resp-field"><div class="resp-field-label">${label}</div><div class="resp-field-val">${val}</div></div>` : ''
+            }).join('')}
+          </div>
+        </div>`
+    }).join('')}</div>`
+  }).catch(err => {
+    console.error(err)
+    const container = document.getElementById('resp-list-container')
+    if (container) container.innerHTML = `<div style="color:var(--text3);font-size:13px;">Erreur lors du chargement.</div>`
+  })
+}
+
+function toggleRespCard(i) {
+  const card = document.getElementById('resp-' + i)
+  if (card) card.classList.toggle('is-open')
+}
+
+function showCallScript() {
+  _showClientsView('nav-callscript', 'Script appel')
+  const el = document.getElementById('clients-view')
+  el.innerHTML = `
+    <div class="cv-header">
+      <div class="cv-title">Script appel découverte</div>
+      <div class="cv-sub">Guide structuré pour mener l'appel avec clarté — ~60 minutes, 8 étapes.</div>
+    </div>
+    <div class="call-steps">
+      ${CALL_STEPS.map((s, i) => `
+        <div class="call-step" id="cs-${i}">
+          <div class="call-step-header" onclick="toggleCallStep(${i})">
+            <span class="call-step-num">${s.num}</span>
+            <span class="call-step-title">${s.title}</span>
+            <span class="call-step-dur">${s.duration}</span>
+            <span class="call-step-chevron">›</span>
+          </div>
+          <div class="call-step-body">
+            <p class="call-step-desc">${s.desc}</p>
+            ${s.questions.map(q => `<div class="call-step-q">${q}</div>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>
+  `
+}
+
+function toggleCallStep(i) {
+  const step = document.getElementById('cs-' + i)
+  if (step) step.classList.toggle('is-open')
+}
+
 // ═══ KEYBOARD SHORTCUTS ═══
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeCmd(); closeDetail() }
@@ -779,6 +945,8 @@ Object.assign(window, {
   showNewProjectInput, handleProjectKey, createProject, deleteProject,
   sendMagicLink, signOut,
   togglePriorityFilter, clearPriorityFilter, toggleHideCompleted, toggleGroupByStatus,
+  showQuestionnaire, showResponses, showCallScript,
+  toggleRespCard, toggleCallStep,
 })
 
 ;(async () => {

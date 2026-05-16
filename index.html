@@ -82,6 +82,22 @@
         <span class="sb-item-label">Launch</span>
         <span class="sb-item-progress" id="sp-launch">—</span>
       </div>
+
+      <div class="sb-sep"></div>
+      <div class="sb-section">Clients</div>
+      <div class="sb-item" id="nav-questionnaire" onclick="showQuestionnaire()">
+        <div class="sb-item-icon">◻</div>
+        <span class="sb-item-label">Questionnaire</span>
+      </div>
+      <div class="sb-item" id="nav-responses" onclick="showResponses()">
+        <div class="sb-item-icon">◻</div>
+        <span class="sb-item-label">Réponses</span>
+        <span class="sb-item-count" id="responses-count"></span>
+      </div>
+      <div class="sb-item" id="nav-callscript" onclick="showCallScript()">
+        <div class="sb-item-icon">◻</div>
+        <span class="sb-item-label">Script appel</span>
+      </div>
     </nav>
 
     <div class="sb-bottom">
@@ -140,6 +156,10 @@
     <!-- Overview (home) -->
     <div id="overview-view" style="display:none;flex:1;overflow:hidden;">
       <div id="stage-overview"></div>
+    </div>
+
+    <!-- Clients view -->
+    <div id="clients-view" style="display:none;flex:1;overflow-y:auto;padding:32px;">
     </div>
   </div>
 

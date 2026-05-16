@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Questionnaire · Withfedd</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0D0D10;
+      --surf:    #1A1A22;
+      --text:    #E8E8F0;
+      --text2:   #A0A0B8;
+      --text3:   #505068;
+      --border:  #252530;
+      --border-v:#2E2E3C;
+      --acc:     #6366F1;
+      --font: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      --danger:  #EF4444;
+    }
+    body.light {
+      --bg:      #FAFAFA;
+      --surf:    #FFFFFF;
+      --text:    #111118;
+      --text2:   #505060;
+      --text3:   #909098;
+      --border:  #EBEBF0;
+      --border-v:#D8D8E8;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      transition: background .25s, color .25s;
+    }
+
+    /* ── PROGRESS BAR ── */
+    #progress-bar-wrap {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--border);
+      z-index: 200;
+    }
+    #progress-bar {
+      height: 100%;
+      background: var(--acc);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: fixed;
+      top: 2px; left: 0; right: 0;
+      z-index: 100;
+      background: var(--bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-v);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 52px;
+      transition: background .25s, border-color .25s;
+    }
+    .header-brand {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      text-decoration: none;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header-step {
+      font-size: 12px;
+      color: var(--text3);
+    }
+    .header-progress {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+    }
+
+    /* ── PAGE SHELL ── */
+    .page {
+      padding-top: 100px;
+      padding-bottom: 120px;
+      max-width: 640px;
+      margin: 0 auto;
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+
+    /* ── INTRO BLOCK ── */
+    .intro {
+      padding: 60px 0 80px;
+    }
+    .intro-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 20px;
+    }
+    .intro h1 {
+      font-size: 34px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .intro p {
+      font-size: 15px;
+      color: var(--text2);
+      line-height: 1.75;
+      margin-bottom: 28px;
+    }
+    .intro-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 0;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surf);
+      border: 1px solid var(--border-v);
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text3);
+    }
+
+    .btn-start {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--acc);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 26px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-top: 36px;
+    }
+    .btn-start:hover { opacity: 0.85; }
+    .btn-start svg { transition: transform 0.15s; }
+    .btn-start:hover svg { transform: translateX(3px); }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 48px;
+      padding-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-v);
+    }
+
+    /* ── QUESTION BLOCK ── */
+    .q-block {
+      margin-bottom: 52px;
+    }
+    .q-num {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text3);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .q-label {
+      font-size: 19px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+    .q-hint {
+      font-size: 13px;
+      color: var(--text3);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    .q-req { color: var(--danger); margin-left: 3px; }
+
+    /* ── VALIDATION ── */
+    .q-error-msg {
+      display: none;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--danger);
+      margin-top: 8px;
+    }
+    .q-block.has-error .q-error-msg { display: block; }
+    .q-block.has-error input[type="text"],
+    .q-block.has-error input[type="email"],
+    .q-block.has-error textarea { border-color: var(--danger); }
+    .q-block.has-error .q-label { color: var(--danger); }
+
+    /* ── INPUTS ── */
+    input[type="text"],
+    input[type="email"],
+    input[type="url"],
+    textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--border-v);
+      border-radius: 0;
+      padding: 12px 0;
+      font-family: var(--font);
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    input[type="text"]::placeholder,
+    input[type="email"]::placeholder,
+    input[type="url"]::placeholder,
+    textarea::placeholder { color: var(--text3); }
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="url"]:focus,
+    textarea:focus { border-color: var(--acc); }
+    textarea {
+      resize: none;
+      min-height: 80px;
+      line-height: 1.7;
+      display: block;
+    }
+
+    /* ── OPTION PILLS ── */
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .opt {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border-v);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .opt:hover {
+      border-color: var(--acc);
+      background: rgba(99,102,241,0.06);
+    }
+    .opt input[type="checkbox"],
+    .opt input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--acc);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .opt:has(input:checked) {
+      border-color: var(--acc);
+      background: rgba(99,102,241,0.1);
+    }
+    .opt-text {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.4;
+    }
+    .opt:has(input:checked) .opt-text {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .other-wrap {
+      display: none;
+      margin-top: 8px;
+    }
+    .other-wrap.show { display: block; }
+    .other-wrap input {
+      font-size: 14px;
+      padding: 8px 0;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: var(--border-v);
+      margin: 64px 0;
+    }
+
+    /* ── SUBMIT ── */
+    .submit-block {
+      padding: 20px 0 40px;
+    }
+    .submit-block p {
+      font-size: 13px;
+      color: var(--text3);
+      margin-bottom: 20px;
+    }
+    .btn-submit {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--acc);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 26px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-submit:hover { opacity: 0.85; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── SUCCESS ── */
+    #success-view {
+      display: none;
+      padding-top: 140px;
+      padding-bottom: 120px;
+      max-width: 640px;
+      margin: 0 auto;
+      padding-left: 32px;
+      padding-right: 32px;
+      text-align: center;
+    }
+    .success-icon {
+      width: 52px; height: 52px;
+      background: rgba(99,102,241,0.12);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 28px;
+      font-size: 22px;
+    }
+    #success-view h2 {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    #success-view p {
+      font-size: 15px;
+      color: var(--text2);
+      line-height: 1.75;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border-v);
+      text-align: center;
+      padding: 24px 32px;
+      font-size: 12px;
+      color: var(--text3);
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 0 20px; }
+      .page { padding-left: 20px; padding-right: 20px; padding-top: 90px; }
+      .intro h1 { font-size: 26px; }
+      .q-label { font-size: 17px; }
+      #success-view { padding-left: 20px; padding-right: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PROGRESS -->
+  <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+  <!-- HEADER -->
+  <header>
+    <span class="header-brand">Withfedd</span>
+    <div class="header-right">
+      <span class="header-step" id="hdr-step">Questionnaire</span>
+      <span class="header-progress" id="hdr-pct">0%</span>
+    </div>
+  </header>
+
+  <!-- FORM VIEW -->
+  <div class="page" id="form-view">
+
+    <!-- INTRO -->
+    <div class="intro">
+      <p class="intro-label">Création de site web</p>
+      <h1>Parlez-moi de votre univers.</h1>
+      <p>Avant notre échange, prenez quelques minutes pour répondre à ces questions. Elles m'aideront à mieux comprendre qui vous êtes et ce que vous souhaitez créer.</p>
+      <div class="intro-meta">
+        <span class="badge">6 sections</span>
+        <span class="badge">10–15 minutes</span>
+        <span class="badge">Aucune bonne ou mauvaise réponse</span>
+      </div>
+      <button class="btn-start" onclick="document.getElementById('q1').scrollIntoView({ behavior: 'smooth' })">
+        Commencer
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <form id="questionnaire" novalidate>
+
+      <!-- ─ SECTION 1 ─ -->
+      <div class="section-label">01 — Votre identité</div>
+
+      <div class="q-block" id="q1" data-required="nom">
+        <p class="q-num">Question 1</p>
+        <p class="q-label">Votre nom complet<span class="q-req">*</span></p>
+        <input type="text" name="nom" placeholder="Aicha Bouraima" />
+        <p class="q-error-msg">Ce champ est obligatoire.</p>
+      </div>
+
+      <div class="q-block" data-required="titre">
+        <p class="q-num">Question 2</p>
+        <p class="q-label">Votre métier ou titre professionnel<span class="q-req">*</span></p>
+        <input type="text" name="titre" placeholder="Coach, formatrice, conférencière…" />
+        <p class="q-error-msg">Ce champ est obligatoire.</p>
+      </div>
+
+      <div class="q-block" data-required="presentation">
+        <p class="q-num">Question 3</p>
+        <p class="q-label">Présentez-vous en quelques phrases<span class="q-req">*</span></p>
+        <p class="q-hint">Comme si vous l'expliquiez à quelqu'un qui ne vous connaît pas.</p>
+        <textarea name="presentation" placeholder="Je suis…"></textarea>
+        <p class="q-error-msg">Ce champ est obligatoire.</p>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 4</p>
+        <p class="q-label">Depuis combien de temps exercez-vous ?</p>
+        <input type="text" name="anciennete" placeholder="Ex : 5 ans" />
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 5</p>
+        <p class="q-label">Quels sont vos domaines d'expertise principaux ?</p>
+        <textarea name="expertise" placeholder="Ex : coaching de dirigeants, prise de parole en public…"></textarea>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 6</p>
+        <p class="q-label">Comment vous décririez-vous en trois mots ?</p>
+        <input type="text" name="trois_mots" placeholder="Ex : Authentique, impactante, humaine" />
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ─ SECTION 2 ─ -->
+      <div class="section-label">02 — Votre public</div>
+
+      <div class="q-block">
+        <p class="q-num">Question 7</p>
+        <p class="q-label">Décrivez votre client idéal</p>
+        <p class="q-hint">Âge, profession, situation, ce qui le caractérise…</p>
+        <textarea name="client_ideal" placeholder="Mon client idéal est…"></textarea>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 8</p>
+        <p class="q-label">Quel problème concret venez-vous résoudre dans sa vie ?</p>
+        <textarea name="probleme" placeholder="Je l'aide à…"></textarea>
+      </div>
+
+      <div class="q-block" data-required="action-checkbox">
+        <p class="q-num">Question 9</p>
+        <p class="q-label">Quelle action souhaitez-vous que les visiteurs fassent sur votre site ?<span class="q-req">*</span></p>
+        <p class="q-hint">Plusieurs choix possibles.</p>
+        <div class="options">
+          <label class="opt"><input type="checkbox" name="action[]" value="Vous envoyer un message" /><span class="opt-text">Vous envoyer un message</span></label>
+          <label class="opt"><input type="checkbox" name="action[]" value="Réserver une consultation" /><span class="opt-text">Réserver une consultation</span></label>
+          <label class="opt"><input type="checkbox" name="action[]" value="Acheter un service ou un produit" /><span class="opt-text">Acheter un service ou un produit</span></label>
+          <label class="opt"><input type="checkbox" name="action[]" value="S'inscrire à la newsletter" /><span class="opt-text">S'inscrire à la newsletter</span></label>
+          <label class="opt">
+            <input type="checkbox" name="action[]" value="Autre" onchange="toggle('other-action', this)" />
+            <span class="opt-text">Autre</span>
+          </label>
+        </div>
+        <div class="other-wrap" id="other-action">
+          <input type="text" name="action_autre" placeholder="Précisez…" />
+        </div>
+        <p class="q-error-msg">Veuillez sélectionner au moins une option.</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ─ SECTION 3 ─ -->
+      <div class="section-label">03 — Vos offres &amp; services</div>
+
+      <div class="q-block" data-required="services">
+        <p class="q-num">Question 10</p>
+        <p class="q-label">Quels services ou produits proposez-vous ?<span class="q-req">*</span></p>
+        <textarea name="services" placeholder="Listez vos offres…"></textarea>
+        <p class="q-error-msg">Ce champ est obligatoire.</p>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 11</p>
+        <p class="q-label">Y a-t-il une offre phare à mettre en avant en priorité ?</p>
+        <input type="text" name="offre_phare" placeholder="Ex : Mon programme de coaching individuel" />
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 12</p>
+        <p class="q-label">Avez-vous un livre, un programme, des conférences ou des ateliers ?</p>
+        <div class="options">
+          <label class="opt"><input type="radio" name="contenu_extra" value="Oui" onchange="toggle('other-contenu', this)" /><span class="opt-text">Oui</span></label>
+          <label class="opt"><input type="radio" name="contenu_extra" value="Non" onchange="hide('other-contenu')" /><span class="opt-text">Non</span></label>
+        </div>
+        <div class="other-wrap" id="other-contenu">
+          <input type="text" name="contenu_extra_detail" placeholder="Décrivez brièvement…" />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ─ SECTION 4 ─ -->
+      <div class="section-label">04 — Univers visuel</div>
+
+      <div class="q-block">
+        <p class="q-num">Question 13</p>
+        <p class="q-label">Avez-vous un site de référence qui vous inspire ?</p>
+        <p class="q-hint">Collez le lien et dites-nous ce qui vous plaît : style, ambiance, couleurs, typographie, structure…</p>
+        <textarea name="reference_site" placeholder="https://… — J'aime surtout…"></textarea>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 14</p>
+        <p class="q-label">Avez-vous d'autres sites qui vous inspirent ?</p>
+        <p class="q-hint">Collez les liens si possible, ou décrivez l'ambiance.</p>
+        <textarea name="inspirations" placeholder="https://…"></textarea>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 15</p>
+        <p class="q-label">Quelles couleurs vous représentent ? Y en a-t-il à éviter ?</p>
+        <input type="text" name="couleurs" placeholder="Ex : J'aime les tons chauds, je veux éviter le bleu" />
+      </div>
+
+      <div class="q-block" data-required="ambiance-radio">
+        <p class="q-num">Question 16</p>
+        <p class="q-label">Quelle ambiance souhaitez-vous pour votre site ?<span class="q-req">*</span></p>
+        <div class="options">
+          <label class="opt"><input type="radio" name="ambiance" value="Sobre & épuré" /><span class="opt-text">Sobre &amp; épuré</span></label>
+          <label class="opt"><input type="radio" name="ambiance" value="Chaleureux & humain" /><span class="opt-text">Chaleureux &amp; humain</span></label>
+          <label class="opt"><input type="radio" name="ambiance" value="Luxueux & premium" /><span class="opt-text">Luxueux &amp; premium</span></label>
+          <label class="opt"><input type="radio" name="ambiance" value="Dynamique & moderne" /><span class="opt-text">Dynamique &amp; moderne</span></label>
+          <label class="opt">
+            <input type="radio" name="ambiance" value="Autre" onchange="toggle('other-ambiance', this)" />
+            <span class="opt-text">Autre</span>
+          </label>
+        </div>
+        <div class="other-wrap" id="other-ambiance">
+          <input type="text" name="ambiance_autre" placeholder="Décrivez…" />
+        </div>
+        <p class="q-error-msg">Veuillez sélectionner une option.</p>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 17</p>
+        <p class="q-label">Vos photos &amp; visuels</p>
+        <div class="options">
+          <label class="opt"><input type="checkbox" name="photos[]" value="J'ai déjà des photos professionnelles" /><span class="opt-text">J'ai déjà des photos professionnelles</span></label>
+          <label class="opt"><input type="checkbox" name="photos[]" value="Mes photos sont à refaire" /><span class="opt-text">Mes photos sont à refaire</span></label>
+          <label class="opt"><input type="checkbox" name="photos[]" value="Je n'ai pas encore de photos" /><span class="opt-text">Je n'ai pas encore de photos</span></label>
+          <label class="opt"><input type="checkbox" name="photos[]" value="Je souhaite intégrer des vidéos" /><span class="opt-text">Je souhaite intégrer des vidéos</span></label>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ─ SECTION 5 ─ -->
+      <div class="section-label">05 — Technique</div>
+
+      <div class="q-block">
+        <p class="q-num">Question 18</p>
+        <p class="q-label">Avez-vous déjà un site web ? Si oui, quelle est son adresse ?</p>
+        <input type="text" name="site_actuel" placeholder="https://… ou Non" />
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 19</p>
+        <p class="q-label">Avez-vous un nom de domaine ?</p>
+        <p class="q-hint">Ex : aichabouraima.com</p>
+        <div class="options">
+          <label class="opt"><input type="radio" name="domaine" value="Oui" /><span class="opt-text">Oui, j'en ai un</span></label>
+          <label class="opt"><input type="radio" name="domaine" value="Non" /><span class="opt-text">Non, pas encore</span></label>
+          <label class="opt"><input type="radio" name="domaine" value="Je ne sais pas" /><span class="opt-text">Je ne sais pas</span></label>
+        </div>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 20</p>
+        <p class="q-label">Quelles fonctionnalités souhaitez-vous sur votre site ?</p>
+        <p class="q-hint">Plusieurs choix possibles.</p>
+        <div class="options">
+          <label class="opt"><input type="checkbox" name="fonctionnalites[]" value="Formulaire de contact" /><span class="opt-text">Formulaire de contact</span></label>
+          <label class="opt"><input type="checkbox" name="fonctionnalites[]" value="Prise de rendez-vous en ligne" /><span class="opt-text">Prise de rendez-vous en ligne</span></label>
+          <label class="opt"><input type="checkbox" name="fonctionnalites[]" value="Newsletter" /><span class="opt-text">Newsletter</span></label>
+          <label class="opt"><input type="checkbox" name="fonctionnalites[]" value="Blog / articles" /><span class="opt-text">Blog / articles</span></label>
+          <label class="opt"><input type="checkbox" name="fonctionnalites[]" value="Boutique en ligne" /><span class="opt-text">Boutique en ligne</span></label>
+          <label class="opt"><input type="checkbox" name="fonctionnalites[]" value="Liens réseaux sociaux" /><span class="opt-text">Liens vers mes réseaux sociaux</span></label>
+          <label class="opt">
+            <input type="checkbox" name="fonctionnalites[]" value="Autre" onchange="toggle('other-fonc', this)" />
+            <span class="opt-text">Autre</span>
+          </label>
+        </div>
+        <div class="other-wrap" id="other-fonc">
+          <input type="text" name="fonctionnalites_autre" placeholder="Précisez…" />
+        </div>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 21</p>
+        <p class="q-label">Souhaitez-vous pouvoir mettre à jour le site vous-même après la livraison ?</p>
+        <div class="options">
+          <label class="opt"><input type="radio" name="autonomie" value="Oui" /><span class="opt-text">Oui, je veux pouvoir le modifier moi-même</span></label>
+          <label class="opt"><input type="radio" name="autonomie" value="Non" /><span class="opt-text">Non, je préfère déléguer les mises à jour</span></label>
+          <label class="opt"><input type="radio" name="autonomie" value="Peu importe" /><span class="opt-text">Pas de préférence</span></label>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ─ SECTION 6 ─ -->
+      <div class="section-label">06 — Calendrier</div>
+
+      <div class="q-block">
+        <p class="q-num">Question 22</p>
+        <p class="q-label">Avez-vous une date souhaitée pour le lancement ?</p>
+        <input type="text" name="lancement" placeholder="Ex : Avant septembre 2025, pas de contrainte…" />
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 23</p>
+        <p class="q-label">Y a-t-il un événement pour lequel le site doit être prêt ?</p>
+        <p class="q-hint">Conférence, lancement, sortie de livre…</p>
+        <input type="text" name="evenement" placeholder="Ex : Conférence en octobre" />
+      </div>
+
+      <div class="q-block" data-required="email">
+        <p class="q-num">Question 24</p>
+        <p class="q-label">Votre adresse email<span class="q-req">*</span></p>
+        <input type="email" name="email" placeholder="votre@email.com" />
+        <p class="q-error-msg">Veuillez entrer une adresse email valide.</p>
+      </div>
+
+      <div class="q-block">
+        <p class="q-num">Question 25</p>
+        <p class="q-label">Un mot à ajouter ?</p>
+        <p class="q-hint">Une question, une contrainte, quelque chose d'important à savoir…</p>
+        <textarea name="message_libre" placeholder="Tout ce qui vous semble pertinent à partager…"></textarea>
+      </div>
+
+      <!-- SUBMIT -->
+      <div class="submit-block">
+        <p>Vos réponses seront envoyées directement à Withfedd.</p>
+        <button type="submit" class="btn-submit" id="btn-submit">
+          Envoyer mes réponses
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- SUCCESS VIEW -->
+  <div id="success-view">
+    <div class="success-icon">✓</div>
+    <h2>Merci !</h2>
+    <p>Vos réponses ont bien été reçues.<br />Je les lirai avec attention et reviendrai vers vous très prochainement.</p>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>Withfedd &nbsp;·&nbsp; Confidentiel</footer>
+
+  <script>
+    // Apply saved theme
+    if (localStorage.getItem('wf-theme') === 'light') document.body.classList.add('light')
+
+    function toggle(id, input) {
+      document.getElementById(id).classList.toggle('show', input.checked)
+    }
+    function hide(id) {
+      document.getElementById(id).classList.remove('show')
+    }
+
+    // Progress bar + header section label
+    function updateProgress() {
+      const scrolled = window.scrollY
+      const total = document.body.scrollHeight - window.innerHeight
+      const pct = total > 0 ? Math.min(100, Math.round((scrolled / total) * 100)) : 0
+      document.getElementById('progress-bar').style.width = pct + '%'
+      document.getElementById('hdr-pct').textContent = pct + '%'
+
+      const sectionLabels = document.querySelectorAll('.section-label')
+      const names = ['Identité', 'Public', 'Offres', 'Visuel', 'Technique', 'Calendrier']
+      let current = 'Questionnaire'
+      sectionLabels.forEach((s, i) => {
+        if (s.getBoundingClientRect().top < 80) current = names[i] || current
+      })
+      document.getElementById('hdr-step').textContent = current
+    }
+    window.addEventListener('scroll', updateProgress, { passive: true })
+
+    // Auto-resize textareas
+    document.querySelectorAll('textarea').forEach(ta => {
+      ta.addEventListener('input', function () {
+        this.style.height = 'auto'
+        this.style.height = this.scrollHeight + 'px'
+      })
+    })
+
+    // Clear error on input
+    document.querySelectorAll('[data-required]').forEach(block => {
+      block.querySelectorAll('input, textarea').forEach(input => {
+        input.addEventListener('input', () => block.classList.remove('has-error'))
+        input.addEventListener('change', () => block.classList.remove('has-error'))
+      })
+    })
+  </script>
+
+  <script type="module" src="/src/questionnaire-form.js"></script>
+</body>
+</html>
